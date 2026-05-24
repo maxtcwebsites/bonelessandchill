@@ -22,25 +22,8 @@
   html { scroll-behavior: smooth; }
   body { background:var(--black); color:var(--text); font-family:'Outfit',sans-serif; overflow-x:hidden; }
 
-  /* LANG PICKER */
-  #lang-picker {
-    position:fixed; inset:0; z-index:99999;
-    background:var(--black);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.5rem;
-  }
-  #lang-picker.hidden { display:none; }
-  .lp-logo { font-family:'Bebas Neue',sans-serif; font-size:clamp(2.5rem,7vw,5rem); color:var(--orange); letter-spacing:4px; text-align:center; }
-  .lp-sub { color:var(--muted); font-size:1rem; letter-spacing:1px; text-align:center; }
-  .lp-btns { display:flex; gap:1.25rem; flex-wrap:wrap; justify-content:center; }
-  .lp-btn {
-    padding:0.85rem 2.5rem; border-radius:99px; font-family:'Outfit',sans-serif;
-    font-size:1rem; font-weight:600; cursor:pointer; border:none; letter-spacing:0.5px;
-    transition:all 0.3s ease;
-  }
-  .lp-btn-en { background:var(--orange); color:#000; }
-  .lp-btn-en:hover { background:var(--orange-glow); box-shadow:0 0 30px rgba(255,106,0,0.5); transform:translateY(-2px); }
-  .lp-btn-es { background:transparent; color:var(--white); border:1.5px solid rgba(255,255,255,0.25); }
-  .lp-btn-es:hover { border-color:var(--orange); color:var(--orange); transform:translateY(-2px); }
+  /* LANG PICKER - hidden, no longer used on load */
+  #lang-picker { display:none; }
 
   /* LOADER */
   #loader { position:fixed; inset:0; z-index:9998; background:var(--black); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity 0.6s ease,visibility 0.6s ease; }
@@ -205,7 +188,7 @@
   .order-btn-ig { border-color:rgba(225,48,108,0.2); }
   .order-btn-ig:hover { border-color:rgba(225,48,108,0.4); background:#1a0d10; box-shadow:0 0 20px rgba(225,48,108,0.08); }
   .order-btn-icon { width:36px; height:36px; flex-shrink:0; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--gray); }
-  .order-btn-icon img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
+  .order-btn-icon img { width:36px; height:36px; max-width:36px; max-height:36px; object-fit:cover; border-radius:10px; display:block; }
   .order-btn-icon-fallback { width:36px; height:36px; flex-shrink:0; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700; }
   .order-btn-text { flex:1; }
   .order-btn-title { font-weight:600; font-size:0.9rem; }
@@ -225,12 +208,15 @@
   .send-method-btn.active { border-color:var(--orange); color:var(--white); background:#1f1008; }
   .send-method-btn:hover:not(.active) { border-color:rgba(255,106,0,0.3); color:var(--text); }
   .send-method-icon { width:24px; height:24px; border-radius:6px; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-  .send-method-icon img { width:100%; height:100%; object-fit:cover; }
+  .send-method-icon img { width:24px; height:24px; max-width:24px; max-height:24px; object-fit:cover; display:block; }
 
   /* FOOTER SOCIAL ICONS */
-  .social-btn img { width:22px; height:22px; object-fit:contain; border-radius:4px; }
-  .social-btn-img-wrap { width:44px; height:44px; background:var(--card); border:1px solid rgba(255,255,255,0.08); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text); transition:all 0.3s ease; }
+  .social-btn-img-wrap { width:44px; height:44px; background:var(--card); border:1px solid rgba(255,255,255,0.08); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text); transition:all 0.3s ease; overflow:hidden; flex-shrink:0; }
+  .social-btn-img-wrap img { width:22px; height:22px; max-width:22px; max-height:22px; object-fit:contain; display:block; border-radius:3px; }
   .social-btn-img-wrap:hover { background:var(--orange); border-color:var(--orange); transform:translateY(-3px); box-shadow:0 0 15px rgba(255,106,0,0.4); }
+  /* Contact card icon images */
+  .contact-card-icon { width:44px; height:44px; flex-shrink:0; background:rgba(255,106,0,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .contact-card-icon img { width:28px; height:28px; max-width:28px; max-height:28px; object-fit:contain; display:block; border-radius:6px; }
 
   /* MENU PAGE */
   .menu-hero { min-height:45vh; background:var(--dark); display:flex; align-items:center; padding:8rem 2rem 3rem; }
@@ -970,17 +956,12 @@ const T = {
   }
 };
 
-let currentLang = 'en';
+let currentLang = 'es';
 
 function setLang(lang) {
   currentLang = lang;
-  document.getElementById('lang-picker').classList.add('hidden');
   document.getElementById('langBtn').textContent = lang === 'en' ? 'ES' : 'EN';
   applyTranslations();
-  // Start loader
-  setTimeout(() => {
-    document.getElementById('loader').classList.add('hidden');
-  }, 2000);
 }
 
 function toggleLang() {
@@ -1004,7 +985,14 @@ function applyTranslations() {
   if (msg && t['form_msg_ph']) msg.placeholder = t['form_msg_ph'];
 }
 
-// ===== NAVBAR SCROLL =====
+// ===== INIT: apply Spanish on load, then show site =====
+window.addEventListener('load', () => {
+  applyTranslations(); // apply Spanish immediately
+  document.getElementById('langBtn').textContent = 'EN';
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 1800);
+});
 const navbar = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
   navbar.classList.toggle('scrolled', window.scrollY > 60);
