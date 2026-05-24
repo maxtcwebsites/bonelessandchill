@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boneless & Chill</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #FF6A00;
+    --orange-glow: #FF8C00;
+    --orange-dim: #cc5500;
+    --black: #0a0a0a;
+    --dark: #111111;
+    --card: #181818;
+    --gray: #2a2a2a;
+    --muted: #888;
+    --white: #f5f5f5;
+    --text: #e8e8e8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body { background:var(--black); color:var(--text); font-family:'Outfit',sans-serif; overflow-x:hidden; }
+
+  /* LANG PICKER */
+  #lang-picker {
+    position:fixed; inset:0; z-index:99999;
+    background:var(--black);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2.5rem;
+  }
+  #lang-picker.hidden { display:none; }
+  .lp-logo { font-family:'Bebas Neue',sans-serif; font-size:clamp(2.5rem,7vw,5rem); color:var(--orange); letter-spacing:4px; text-align:center; }
+  .lp-sub { color:var(--muted); font-size:1rem; letter-spacing:1px; text-align:center; }
+  .lp-btns { display:flex; gap:1.25rem; flex-wrap:wrap; justify-content:center; }
+  .lp-btn {
+    padding:0.85rem 2.5rem; border-radius:99px; font-family:'Outfit',sans-serif;
+    font-size:1rem; font-weight:600; cursor:pointer; border:none; letter-spacing:0.5px;
+    transition:all 0.3s ease;
+  }
+  .lp-btn-en { background:var(--orange); color:#000; }
+  .lp-btn-en:hover { background:var(--orange-glow); box-shadow:0 0 30px rgba(255,106,0,0.5); transform:translateY(-2px); }
+  .lp-btn-es { background:transparent; color:var(--white); border:1.5px solid rgba(255,255,255,0.25); }
+  .lp-btn-es:hover { border-color:var(--orange); color:var(--orange); transform:translateY(-2px); }
+
+  /* LOADER */
+  #loader { position:fixed; inset:0; z-index:9998; background:var(--black); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:opacity 0.6s ease,visibility 0.6s ease; }
+  #loader.hidden { opacity:0; visibility:hidden; }
+  .loader-logo { font-family:'Bebas Neue',sans-serif; font-size:clamp(3rem,8vw,6rem); color:var(--orange); letter-spacing:4px; animation:pulseGlow 1.5s ease-in-out infinite; }
+  .loader-bar { width:200px; height:3px; background:var(--gray); margin-top:2rem; border-radius:99px; overflow:hidden; }
+  .loader-fill { height:100%; background:linear-gradient(90deg,var(--orange),var(--orange-glow)); border-radius:99px; animation:loadFill 1.8s ease forwards; }
+  @keyframes loadFill { from{width:0} to{width:100%} }
+  @keyframes pulseGlow { 0%,100%{text-shadow:0 0 20px rgba(255,106,0,0.5)} 50%{text-shadow:0 0 60px rgba(255,106,0,0.9),0 0 100px rgba(255,106,0,0.4)} }
+
+  /* NAVBAR */
+  nav { position:fixed; top:0; left:0; right:0; z-index:1000; padding:1.2rem 2rem; display:flex; align-items:center; justify-content:space-between; transition:all 0.4s ease; }
+  nav.scrolled { background:rgba(10,10,10,0.95); backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,106,0,0.15); padding:0.8rem 2rem; }
+  .nav-logo { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; color:var(--orange); letter-spacing:2px; cursor:pointer; }
+  .nav-right { display:flex; align-items:center; gap:1.5rem; }
+  .nav-links { display:flex; align-items:center; gap:2rem; list-style:none; }
+  .nav-links a { color:var(--text); text-decoration:none; font-size:0.9rem; font-weight:500; letter-spacing:0.5px; position:relative; transition:color 0.3s; cursor:pointer; }
+  .nav-links a::after { content:''; position:absolute; bottom:-4px; left:0; right:0; height:2px; background:var(--orange); transform:scaleX(0); transform-origin:left; transition:transform 0.3s ease; }
+  .nav-links a:hover { color:var(--orange); }
+  .nav-links a:hover::after { transform:scaleX(1); }
+  .nav-cta { background:var(--orange)!important; color:#000!important; padding:0.5rem 1.2rem; border-radius:99px; font-weight:600!important; transition:all 0.3s ease!important; }
+  .nav-cta:hover { background:var(--orange-glow)!important; box-shadow:0 0 20px rgba(255,106,0,0.5); transform:translateY(-1px); }
+  .nav-cta::after { display:none!important; }
+  .lang-toggle { background:rgba(255,106,0,0.1); border:1px solid rgba(255,106,0,0.25); color:var(--orange); border-radius:99px; padding:0.35rem 0.9rem; font-family:'Outfit',sans-serif; font-size:0.78rem; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all 0.3s; }
+  .lang-toggle:hover { background:rgba(255,106,0,0.2); }
+  .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; padding:4px; }
+  .hamburger span { width:24px; height:2px; background:var(--text); border-radius:2px; transition:all 0.3s; }
+
+  /* PAGES */
+  .page { display:none; min-height:100vh; }
+  .page.active { display:block; }
+
+  /* HERO */
+  #hero { min-height:100vh; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:6rem 2rem 4rem; }
+  #particles-canvas { position:absolute; inset:0; pointer-events:none; }
+  .hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% 60%,rgba(255,106,0,0.08) 0%,transparent 70%),radial-gradient(ellipse 40% 40% at 80% 20%,rgba(255,106,0,0.05) 0%,transparent 60%); }
+  .hero-content { position:relative; z-index:2; text-align:center; max-width:900px; animation:heroFadeIn 1s ease 0.3s both; }
+  @keyframes heroFadeIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+  .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(255,106,0,0.12); border:1px solid rgba(255,106,0,0.3); border-radius:99px; padding:0.4rem 1rem; font-size:0.8rem; font-weight:500; color:var(--orange); letter-spacing:1px; text-transform:uppercase; margin-bottom:1.5rem; }
+  .hero-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(4rem,12vw,9rem); line-height:0.9; letter-spacing:2px; color:var(--white); margin-bottom:0.2rem; }
+  .hero-title .accent { color:var(--orange); }
+  .hero-sub { font-size:clamp(1rem,2.5vw,1.3rem); color:var(--muted); font-weight:300; margin:1.5rem auto 2.5rem; max-width:520px; line-height:1.6; }
+  .hero-buttons { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+  .btn-primary { background:var(--orange); color:#000; border:none; padding:0.85rem 2rem; border-radius:99px; font-family:'Outfit',sans-serif; font-size:0.95rem; font-weight:600; cursor:pointer; transition:all 0.3s ease; letter-spacing:0.5px; }
+  .btn-primary:hover { background:var(--orange-glow); box-shadow:0 0 30px rgba(255,106,0,0.6),0 8px 20px rgba(0,0,0,0.4); transform:translateY(-2px); }
+  .btn-secondary { background:transparent; color:var(--white); border:1.5px solid rgba(255,255,255,0.25); padding:0.85rem 2rem; border-radius:99px; font-family:'Outfit',sans-serif; font-size:0.95rem; font-weight:500; cursor:pointer; transition:all 0.3s ease; }
+  .btn-secondary:hover { border-color:var(--orange); color:var(--orange); box-shadow:0 0 20px rgba(255,106,0,0.15); transform:translateY(-2px); }
+  .scroll-indicator { position:absolute; bottom:2rem; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:8px; opacity:0.5; animation:bounce 2s ease infinite; }
+  .scroll-indicator span { font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; }
+  .scroll-arrow { width:1.5px; height:30px; background:linear-gradient(to bottom,var(--orange),transparent); }
+  @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(8px)} }
+
+  /* SECTIONS */
+  section { padding:5rem 2rem; }
+  .container { max-width:1200px; margin:0 auto; }
+  .section-tag { display:inline-block; font-size:0.75rem; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--orange); margin-bottom:0.75rem; }
+  .section-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(2.5rem,6vw,4rem); line-height:1; color:var(--white); margin-bottom:1rem; }
+  .section-sub { color:var(--muted); font-size:1rem; font-weight:300; max-width:520px; line-height:1.7; margin-bottom:3rem; }
+  .orange-divider { width:60px; height:3px; background:linear-gradient(90deg,var(--orange),var(--orange-glow)); border-radius:99px; margin-bottom:1.5rem; }
+
+  /* FOOD CARDS */
+  #featured { background:var(--dark); }
+  .food-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; }
+  .food-card { background:var(--card); border:1px solid rgba(255,255,255,0.05); border-radius:16px; overflow:hidden; transition:all 0.4s ease; cursor:default; }
+  .food-card:hover { transform:translateY(-8px); border-color:rgba(255,106,0,0.3); box-shadow:0 20px 40px rgba(0,0,0,0.4),0 0 30px rgba(255,106,0,0.08); }
+  .food-img { width:100%; height:220px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+  .food-img img { width:100%; height:100%; object-fit:cover; display:block; }
+  .food-img-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.7)); }
+  .food-card-body { padding:1.25rem; }
+  .food-card-tag { font-size:0.7rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--orange); margin-bottom:0.5rem; }
+  .food-card-name { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; color:var(--white); letter-spacing:1px; margin-bottom:0.4rem; }
+  .food-card-desc { font-size:0.85rem; color:var(--muted); line-height:1.5; margin-bottom:1rem; }
+  .food-card-footer { display:flex; align-items:center; }
+
+  /* REVIEWS */
+  #reviews { background:var(--black); }
+  .reviews-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; }
+  .review-card { background:var(--card); border:1px solid rgba(255,255,255,0.05); border-radius:16px; padding:1.5rem; transition:all 0.3s ease; }
+  .review-card:hover { border-color:rgba(255,106,0,0.2); transform:translateY(-4px); }
+  .stars { color:var(--orange); font-size:1rem; letter-spacing:2px; margin-bottom:0.75rem; }
+  .review-text { font-size:0.9rem; line-height:1.7; color:var(--text); margin-bottom:1.25rem; font-style:italic; }
+  .reviewer { display:flex; align-items:center; gap:12px; }
+  .reviewer-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--orange),var(--orange-dim)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#000; flex-shrink:0; }
+  .reviewer-name { font-weight:600; font-size:0.9rem; }
+  .reviewer-loc { font-size:0.75rem; color:var(--muted); }
+
+  /* ABOUT */
+  .about-hero { min-height:60vh; background:linear-gradient(135deg,var(--black) 0%,#1a0a00 100%); display:flex; align-items:center; padding:8rem 2rem 4rem; position:relative; overflow:hidden; }
+  .about-story { background:var(--dark); }
+  .story-grid { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; }
+  .story-img { background:var(--card); border:1px solid rgba(255,106,0,0.15); border-radius:20px; height:400px; overflow:hidden; position:relative; }
+  .story-img img { width:100%; height:100%; object-fit:cover; display:block; }
+  .story-img-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .pillars { background:var(--black); }
+  .pillars-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.5rem; margin-top:3rem; }
+  .pillar-card { background:var(--card); border:1px solid rgba(255,255,255,0.05); border-radius:16px; padding:2rem 1.5rem; transition:all 0.4s ease; position:relative; overflow:hidden; }
+  .pillar-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--orange),var(--orange-glow)); transform:scaleX(0); transform-origin:left; transition:transform 0.4s ease; }
+  .pillar-card:hover::before { transform:scaleX(1); }
+  .pillar-card:hover { transform:translateY(-6px); border-color:rgba(255,106,0,0.2); box-shadow:0 20px 40px rgba(0,0,0,0.3); }
+  .pillar-icon-wrap { width:36px; height:36px; background:rgba(255,106,0,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:1rem; }
+  .pillar-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; color:var(--white); letter-spacing:1px; margin-bottom:0.75rem; }
+  .pillar-desc { font-size:0.9rem; color:var(--muted); line-height:1.7; }
+
+  /* LOCATION */
+  .location-hero { min-height:50vh; background:var(--dark); display:flex; align-items:center; padding:8rem 2rem 4rem; }
+  .map-section { background:var(--black); }
+  .map-layout { display:grid; grid-template-columns:1fr 1.4fr; gap:2.5rem; align-items:start; }
+  .location-cards { display:flex; flex-direction:column; gap:1.25rem; }
+  .loc-card { background:var(--card); border:1px solid rgba(255,106,0,0.15); border-radius:14px; padding:1.25rem 1.5rem; transition:all 0.3s ease; display:flex; align-items:flex-start; gap:1rem; }
+  .loc-card:hover { box-shadow:0 0 20px rgba(255,106,0,0.12),0 0 0 1px rgba(255,106,0,0.3); transform:translateX(4px); }
+  .loc-icon { width:40px; height:40px; flex-shrink:0; background:rgba(255,106,0,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .loc-info h4 { font-weight:600; font-size:0.9rem; margin-bottom:0.25rem; color:var(--orange); }
+  .loc-info p { font-size:0.85rem; color:var(--muted); line-height:1.6; }
+  .map-container { background:var(--card); border:1px solid rgba(255,106,0,0.15); border-radius:20px; overflow:hidden; height:420px; }
+  .map-container iframe { width:100%; height:100%; border:none; filter:invert(0.85) hue-rotate(180deg) saturate(0.5); }
+  .hours-section { background:var(--dark); }
+  .hours-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1rem; margin-top:2rem; }
+  .hours-card { background:var(--card); border-radius:12px; padding:1.25rem; text-align:center; border:1px solid rgba(255,255,255,0.05); transition:all 0.3s; }
+  .hours-card:hover { border-color:rgba(255,106,0,0.2); }
+  .hours-day { font-size:0.75rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--orange); margin-bottom:0.4rem; }
+  .hours-time { font-size:1rem; font-weight:500; color:var(--white); }
+  .hours-closed { color:var(--muted); font-style:italic; }
+
+  /* CONTACT */
+  .contact-hero { min-height:50vh; background:var(--dark); display:flex; align-items:center; padding:8rem 2rem 4rem; }
+  .contact-layout { display:grid; grid-template-columns:1fr 1.2fr; gap:4rem; align-items:start; }
+  .contact-cards { display:flex; flex-direction:column; gap:1rem; }
+  .contact-card { background:var(--card); border:1px solid rgba(255,255,255,0.05); border-radius:14px; padding:1.25rem 1.5rem; display:flex; align-items:center; gap:1rem; transition:all 0.3s; }
+  .contact-card:hover { border-color:rgba(255,106,0,0.25); box-shadow:0 0 20px rgba(255,106,0,0.08); transform:translateX(4px); }
+  .contact-card-icon { width:44px; height:44px; flex-shrink:0; background:rgba(255,106,0,0.12); border-radius:12px; display:flex; align-items:center; justify-content:center; }
+  .contact-card-info h4 { font-size:0.75rem; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--orange); margin-bottom:0.2rem; }
+  .contact-card-info p { font-size:0.9rem; color:var(--text); }
+  .contact-form-wrap { background:var(--card); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:2rem; }
+  .form-group { margin-bottom:1.25rem; }
+  .form-group label { display:block; font-size:0.8rem; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); margin-bottom:0.5rem; }
+  .form-group input,.form-group textarea { width:100%; background:var(--gray); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:0.85rem 1rem; color:var(--text); font-family:'Outfit',sans-serif; font-size:0.95rem; outline:none; transition:all 0.3s; }
+  .form-group input:focus,.form-group textarea:focus { border-color:rgba(255,106,0,0.5); box-shadow:0 0 0 3px rgba(255,106,0,0.08); background:#2e2e2e; }
+  .form-group textarea { height:140px; resize:vertical; }
+  .submit-btn { width:100%; background:var(--orange); color:#000; border:none; border-radius:99px; padding:1rem; font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.3s ease; letter-spacing:0.5px; }
+  .submit-btn:hover { background:var(--orange-glow); box-shadow:0 0 30px rgba(255,106,0,0.5); transform:translateY(-2px); }
+  .success-msg { display:none; text-align:center; padding:1.5rem; background:rgba(255,106,0,0.08); border:1px solid rgba(255,106,0,0.3); border-radius:12px; margin-top:1rem; animation:fadeInUp 0.5s ease; }
+  .success-msg.show { display:block; }
+  @keyframes fadeInUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ORDER BUTTONS */
+  .order-section { margin-top:2rem; }
+  .order-section-label { font-size:0.75rem; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:0.75rem; }
+  .order-btns { display:flex; flex-direction:column; gap:0.75rem; }
+  .order-btn {
+    display:flex; align-items:center; gap:0.9rem;
+    background:var(--card); border:1px solid rgba(255,255,255,0.07);
+    border-radius:14px; padding:0.9rem 1.25rem;
+    text-decoration:none; color:var(--text);
+    font-family:'Outfit',sans-serif; font-size:0.95rem; font-weight:500;
+    transition:all 0.3s ease; cursor:pointer;
+  }
+  .order-btn:hover { transform:translateX(5px); box-shadow:0 0 20px rgba(255,106,0,0.1); }
+  .order-btn-wa { border-color:rgba(37,211,102,0.2); }
+  .order-btn-wa:hover { border-color:rgba(37,211,102,0.5); background:#0d1f14; box-shadow:0 0 20px rgba(37,211,102,0.1); }
+  .order-btn-ue { border-color:rgba(6,195,110,0.2); }
+  .order-btn-ue:hover { border-color:rgba(6,195,110,0.5); background:#071a11; box-shadow:0 0 20px rgba(6,195,110,0.1); }
+  .order-btn-ig { border-color:rgba(225,48,108,0.2); }
+  .order-btn-ig:hover { border-color:rgba(225,48,108,0.4); background:#1a0d10; box-shadow:0 0 20px rgba(225,48,108,0.08); }
+  .order-btn-icon { width:36px; height:36px; flex-shrink:0; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--gray); }
+  .order-btn-icon img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
+  .order-btn-icon-fallback { width:36px; height:36px; flex-shrink:0; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700; }
+  .order-btn-text { flex:1; }
+  .order-btn-title { font-weight:600; font-size:0.9rem; }
+  .order-btn-sub { font-size:0.75rem; color:var(--muted); margin-top:1px; }
+  .order-btn-arrow { color:var(--muted); font-size:0.8rem; transition:transform 0.3s; }
+  .order-btn:hover .order-btn-arrow { transform:translateX(3px); color:var(--orange); }
+
+  /* SEND METHOD CHOOSER */
+  .send-methods { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem; }
+  .send-method-btn {
+    display:flex; align-items:center; gap:0.6rem;
+    background:var(--gray); border:1.5px solid rgba(255,255,255,0.06);
+    border-radius:12px; padding:0.7rem 1rem;
+    font-family:'Outfit',sans-serif; font-size:0.85rem; font-weight:500;
+    color:var(--muted); cursor:pointer; transition:all 0.3s;
+  }
+  .send-method-btn.active { border-color:var(--orange); color:var(--white); background:#1f1008; }
+  .send-method-btn:hover:not(.active) { border-color:rgba(255,106,0,0.3); color:var(--text); }
+  .send-method-icon { width:24px; height:24px; border-radius:6px; overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .send-method-icon img { width:100%; height:100%; object-fit:cover; }
+
+  /* FOOTER SOCIAL ICONS */
+  .social-btn img { width:22px; height:22px; object-fit:contain; border-radius:4px; }
+  .social-btn-img-wrap { width:44px; height:44px; background:var(--card); border:1px solid rgba(255,255,255,0.08); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text); transition:all 0.3s ease; }
+  .social-btn-img-wrap:hover { background:var(--orange); border-color:var(--orange); transform:translateY(-3px); box-shadow:0 0 15px rgba(255,106,0,0.4); }
+
+  /* MENU PAGE */
+  .menu-hero { min-height:45vh; background:var(--dark); display:flex; align-items:center; padding:8rem 2rem 3rem; }
+  .menu-img-section { background:var(--black); padding:3rem 2rem 5rem; }
+  .menu-img-wrap { max-width:900px; margin:0 auto; background:var(--card); border:1px solid rgba(255,106,0,0.15); border-radius:20px; overflow:hidden; }
+  .menu-img-wrap img { width:100%; display:block; }
+  .menu-placeholder { width:100%; min-height:600px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; background:var(--card); color:var(--muted); }
+  .menu-placeholder p { font-size:0.9rem; letter-spacing:0.5px; }
+
+  /* FOOTER */
+  footer { background:var(--dark); border-top:1px solid rgba(255,255,255,0.05); padding:3rem 2rem 2rem; text-align:center; }
+  .footer-logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; color:var(--orange); letter-spacing:3px; margin-bottom:1rem; }
+  .footer-tagline { color:var(--muted); font-size:0.9rem; margin-bottom:2rem; }
+  .social-links { display:flex; gap:1rem; justify-content:center; margin-bottom:2rem; }
+  .social-btn { width:44px; height:44px; background:var(--card); border:1px solid rgba(255,255,255,0.08); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; letter-spacing:1px; text-decoration:none; color:var(--text); transition:all 0.3s ease; }
+  .social-btn:hover { background:var(--orange); border-color:var(--orange); color:#000; transform:translateY(-3px); box-shadow:0 0 15px rgba(255,106,0,0.4); }
+  .footer-copy { color:var(--muted); font-size:0.8rem; }
+
+  /* ANIMATIONS */
+  .reveal { opacity:0; transform:translateY(30px); transition:opacity 0.7s ease,transform 0.7s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+  .reveal-delay-1 { transition-delay:0.1s; }
+  .reveal-delay-2 { transition-delay:0.2s; }
+  .reveal-delay-3 { transition-delay:0.3s; }
+  .reveal-delay-4 { transition-delay:0.4s; }
+
+  /* RESPONSIVE */
+  @media(max-width:768px){
+    .nav-links { display:none; flex-direction:column; position:absolute; top:100%; left:0; right:0; background:rgba(10,10,10,0.98); padding:1.5rem 2rem; border-bottom:1px solid rgba(255,106,0,0.15); gap:1.25rem; }
+    .nav-links.open { display:flex; }
+    .hamburger { display:flex; }
+    .story-grid,.map-layout,.contact-layout { grid-template-columns:1fr; }
+    .story-img { height:260px; }
+    .hero-title { font-size:clamp(3rem,15vw,5rem); }
+    .food-grid { grid-template-columns:1fr; }
+  }
+  @media(max-width:480px){
+    section { padding:3.5rem 1rem; }
+    .hero-buttons { flex-direction:column; align-items:center; }
+    .btn-primary,.btn-secondary { width:100%; max-width:280px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LANGUAGE PICKER -->
+<div id="lang-picker">
+  <div class="lp-logo">BONELESS &amp; CHILL</div>
+  <div class="lp-sub" id="lp-sub">Choose your language / Elige tu idioma</div>
+  <div class="lp-btns">
+    <button class="lp-btn lp-btn-en" onclick="setLang('en')">English</button>
+    <button class="lp-btn lp-btn-es" onclick="setLang('es')">Español</button>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-logo">Boneless &amp; Chill</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <div class="nav-logo" onclick="showPage('home')">B&amp;C</div>
+  <div class="nav-right">
+    <ul class="nav-links" id="navLinks">
+      <li><a onclick="showPage('home');closeMenu()" data-t="nav_home">Home</a></li>
+      <li><a onclick="showPage('menu');closeMenu()" data-t="nav_menu">Menu</a></li>
+      <li><a onclick="showPage('about');closeMenu()" data-t="nav_about">Who Are We?</a></li>
+      <li><a onclick="showPage('location');closeMenu()" data-t="nav_location">Where Are We?</a></li>
+      <li><a onclick="showPage('contact');closeMenu()" class="nav-cta" data-t="nav_contact">Contact Us</a></li>
+    </ul>
+    <button class="lang-toggle" onclick="toggleLang()" id="langBtn">ES</button>
+    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+  </div>
+</nav>
+
+<!-- ========== HOME PAGE ========== -->
+<div id="page-home" class="page active">
+  <section id="hero">
+    <div class="hero-bg"></div>
+    <canvas id="particles-canvas"></canvas>
+    <div class="hero-content">
+      <div class="hero-badge" data-t="hero_badge">Now Serving — Thursday to Sunday</div>
+      <h1 class="hero-title">BONELESS<br><span class="accent">&amp; CHILL</span></h1>
+      <p class="hero-sub" data-t="hero_sub">The perfect place to chill and enjoy the best boneless wings. Bold flavors, cozy vibes, unforgettable moments.</p>
+      <div class="hero-buttons">
+        <button class="btn-primary" onclick="showPage('menu')" data-t="hero_btn_menu">View Menu</button>
+        <button class="btn-secondary" onclick="showPage('contact')" data-t="hero_btn_contact">Contact Us</button>
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      <span data-t="scroll">Scroll</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <section id="featured">
+    <div class="container">
+      <div class="reveal">
+        <div class="section-tag" data-t="feat_tag">Our Signature</div>
+        <div class="orange-divider"></div>
+        <h2 class="section-title" data-t="feat_title">CROWD FAVORITES</h2>
+        <p class="section-sub" data-t="feat_sub">Each plate is crafted with bold sauces, premium chicken, and that unmistakable B&amp;C soul.</p>
+      </div>
+      <div class="food-grid">
+        <div class="food-card reveal reveal-delay-1">
+          <div class="food-img">
+            <img src="pp.png" alt="Personal Pack" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#1a0800,#2d1200);align-items:center;justify-content:center;">
+              <svg width="70" height="70" viewBox="0 0 80 80" fill="none"><ellipse cx="40" cy="52" rx="28" ry="14" fill="#FF6A00" opacity="0.18"/><rect x="20" y="22" width="40" height="26" rx="13" fill="#FF6A00" opacity="0.85"/><rect x="30" y="18" width="20" height="10" rx="5" fill="#cc5500"/></svg>
+            </div>
+            <div class="food-img-overlay"></div>
+          </div>
+          <div class="food-card-body">
+            <div class="food-card-tag" data-t="pack_tag_personal">People's Favorite</div>
+            <div class="food-card-name" data-t="pack_name_personal">Personal Pack</div>
+            <p class="food-card-desc" data-t="pack_desc_personal">The perfect solo experience. Choose your sauce, get your wings, and settle in for a good time.</p>
+            <div class="food-card-footer"></div>
+          </div>
+        </div>
+        <div class="food-card reveal reveal-delay-2">
+          <div class="food-img">
+            <img src="cp.png" alt="Classic Pack" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#120a00,#251500);align-items:center;justify-content:center;">
+              <svg width="70" height="70" viewBox="0 0 80 80" fill="none"><ellipse cx="40" cy="52" rx="28" ry="14" fill="#FF8C00" opacity="0.18"/><rect x="20" y="22" width="40" height="26" rx="13" fill="#FF8C00" opacity="0.85"/><rect x="30" y="18" width="20" height="10" rx="5" fill="#cc5500"/></svg>
+            </div>
+            <div class="food-img-overlay"></div>
+          </div>
+          <div class="food-card-body">
+            <div class="food-card-tag" data-t="pack_tag_classic">Best Seller</div>
+            <div class="food-card-name" data-t="pack_name_classic">Classic Pack</div>
+            <p class="food-card-desc" data-t="pack_desc_classic">Made for sharing. More wings, more fun. Bring a friend and make it a moment.</p>
+            <div class="food-card-footer"></div>
+          </div>
+        </div>
+        <div class="food-card reveal reveal-delay-3">
+          <div class="food-img">
+            <img src="sp.png" alt="Supreme Pack" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#0f0800,#1e1200);align-items:center;justify-content:center;">
+              <svg width="70" height="70" viewBox="0 0 80 80" fill="none"><ellipse cx="40" cy="52" rx="30" ry="15" fill="#FF6A00" opacity="0.22"/><rect x="16" y="20" width="48" height="30" rx="15" fill="#FF6A00" opacity="0.9"/><rect x="28" y="14" width="24" height="12" rx="6" fill="#cc5500"/><ellipse cx="40" cy="20" rx="6" ry="3" fill="#FF8C00" opacity="0.6"/></svg>
+            </div>
+            <div class="food-img-overlay"></div>
+          </div>
+          <div class="food-card-body">
+            <div class="food-card-tag" data-t="pack_tag_supreme">The Full Experience</div>
+            <div class="food-card-name" data-t="pack_name_supreme">Supreme Pack</div>
+            <p class="food-card-desc" data-t="pack_desc_supreme">Go all out. The ultimate B&amp;C experience for those who refuse to settle for less.</p>
+            <div class="food-card-footer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="reviews">
+    <div class="container">
+      <div class="reveal">
+        <div class="section-tag" data-t="rev_tag">What People Say</div>
+        <div class="orange-divider"></div>
+        <h2 class="section-title" data-t="rev_title">THE LOVE IS REAL</h2>
+        <p class="section-sub" data-t="rev_sub">Don't just take our word for it — hear it from the people who've tasted the difference.</p>
+      </div>
+      <div class="reviews-grid">
+        <div class="review-card reveal reveal-delay-1">
+          <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="review-text" data-t="rev1">"Honestly the best boneless wings I've ever had. The Classic Pack is incredible. This place has become our go-to every week."</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar">MT</div>
+            <div>
+              <div class="reviewer-name">Max T.</div>
+              <div class="reviewer-loc" data-t="rev1_loc">Local Regular</div>
+            </div>
+          </div>
+        </div>
+        <div class="review-card reveal reveal-delay-2">
+          <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="review-text" data-t="rev2">"The vibe is everything. Cozy, modern, great music. The Personal Pack is perfect for a solo night out. Highly recommend."</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar">DC</div>
+            <div>
+              <div class="reviewer-name">Daniela C.</div>
+              <div class="reviewer-loc" data-t="rev2_loc">First-Timer, Now Addicted</div>
+            </div>
+          </div>
+        </div>
+        <div class="review-card reveal reveal-delay-3">
+          <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+          <p class="review-text" data-t="rev3">"The Supreme Pack is the move. Great value, even better flavor. The staff is friendly and the atmosphere is on point."</p>
+          <div class="reviewer">
+            <div class="reviewer-avatar">OT</div>
+            <div>
+              <div class="reviewer-name">Omar T.</div>
+              <div class="reviewer-loc" data-t="rev3_loc">Wing Enthusiast</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:linear-gradient(135deg,#1a0800 0%,var(--black) 100%);padding:4rem 2rem;text-align:center;">
+    <div class="container reveal">
+      <h2 class="section-title" style="margin-bottom:0.75rem;" data-t="cta_title">READY TO CHILL?</h2>
+      <p style="color:var(--muted);margin-bottom:2rem;" data-t="cta_sub">Come experience the flavor. Find us, hit us up, or just show up.</p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="showPage('location')" data-t="cta_find">Find Us</button>
+        <button class="btn-secondary" onclick="showPage('contact')" data-t="cta_hit">Hit Us Up</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">BONELESS &amp; CHILL</div>
+    <p class="footer-tagline" data-t="footer_tag">The perfect place to chill and eat good. Always.</p>
+    <div class="social-links">
+      <a class="social-btn-img-wrap" href="https://www.instagram.com/boneless_chill/" target="_blank" title="Instagram">
+        <img src="instagram.png" alt="Instagram" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;'>IG</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://wa.me/528446752860" target="_blank" title="WhatsApp">
+        <img src="whatsapp.png" alt="WhatsApp" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;color:#25d366;'>WA</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://www.ubereats.com/mx/store/boneless-n-chill-saltillo/ME5gMDrDWHWCVBhBib1fmw?ps=1" target="_blank" title="Uber Eats">
+        <img src="ubereats.png" alt="Uber Eats" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.65rem;font-weight:800;color:#06c36e;'>UE</span>'">
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2025 Boneless &amp; Chill. All rights reserved.</p>
+  </footer>
+</div>
+
+<!-- ========== MENU PAGE ========== -->
+<div id="page-menu" class="page">
+  <div class="menu-hero">
+    <div class="container">
+      <div class="section-tag" data-t="menu_tag">Full Menu</div>
+      <div class="orange-divider"></div>
+      <h1 class="section-title" style="font-size:clamp(3rem,8vw,5.5rem);" data-t="menu_title">OUR <span style="color:var(--orange)">MENU</span></h1>
+      <p style="color:var(--muted);font-size:1.05rem;max-width:480px;line-height:1.7;margin-top:1rem;" data-t="menu_sub">Everything we serve, all in one place. Scroll to see the full selection.</p>
+    </div>
+  </div>
+  <div class="menu-img-section">
+    <div class="menu-img-wrap">
+      <img src="menu.png" alt="Boneless & Chill Menu" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="menu-placeholder" style="display:none;">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <p data-t="menu_placeholder">Place menu.png in the same folder as this file</p>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <div class="footer-logo">BONELESS &amp; CHILL</div>
+    <p class="footer-tagline" data-t="footer_tag">The perfect place to chill and eat good. Always.</p>
+    <div class="social-links">
+      <a class="social-btn-img-wrap" href="https://www.instagram.com/boneless_chill/" target="_blank" title="Instagram">
+        <img src="instagram.png" alt="Instagram" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;'>IG</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://wa.me/528446752860" target="_blank" title="WhatsApp">
+        <img src="whatsapp.png" alt="WhatsApp" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;color:#25d366;'>WA</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://www.ubereats.com/mx/store/boneless-n-chill-saltillo/ME5gMDrDWHWCVBhBib1fmw?ps=1" target="_blank" title="Uber Eats">
+        <img src="ubereats.png" alt="Uber Eats" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.65rem;font-weight:800;color:#06c36e;'>UE</span>'">
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2025 Boneless &amp; Chill. All rights reserved.</p>
+  </footer>
+</div>
+
+<!-- ========== ABOUT PAGE ========== -->
+<div id="page-about" class="page">
+  <div class="about-hero">
+    <div class="container">
+      <div class="section-tag" data-t="about_tag">Our Story</div>
+      <div class="orange-divider"></div>
+      <h1 class="section-title" style="font-size:clamp(3rem,8vw,5.5rem);max-width:700px;" data-t="about_hero_title">WE'RE MORE<br>THAN <span style="color:var(--orange)">WINGS.</span></h1>
+      <p style="color:var(--muted);font-size:1.1rem;max-width:520px;line-height:1.7;margin-top:1rem;" data-t="about_hero_sub">We're a feeling. A vibe. A place where good food meets great people, and every meal becomes a memory.</p>
+    </div>
+  </div>
+
+  <section class="about-story">
+    <div class="container">
+      <div class="story-grid">
+        <div>
+          <div class="section-tag reveal" data-t="about_story_tag">The Beginning</div>
+          <div class="orange-divider reveal"></div>
+          <h2 class="section-title reveal" data-t="about_story_title">BORN FROM<br>A PASSION<br>FOR <span style="color:var(--orange)">FLAVOR</span></h2>
+          <p class="reveal" style="color:var(--muted);line-height:1.8;margin-bottom:1.5rem;" data-t="about_p1">Boneless &amp; Chill started as a simple dream: create the perfect boneless wing experience in an atmosphere that felt like home — but cooler. Our founders spent years perfecting recipes, sourcing quality ingredients, and designing a space where flavor meets comfort.</p>
+          <p class="reveal" style="color:var(--muted);line-height:1.8;" data-t="about_p2">Today, we're proud to be more than a restaurant. We're a community gathering spot, a celebration venue, a weekly tradition, and a place where every guest feels like family.</p>
+        </div>
+        <div class="story-img reveal">
+          <img src="WAW.png" alt="Who Are We" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="story-img-placeholder" style="display:none;">
+            <svg width="100" height="100" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="48" fill="#FF6A00" opacity="0.08" stroke="#FF6A00" stroke-width="1" stroke-dasharray="4 4"/><circle cx="60" cy="60" r="32" fill="#FF6A00" opacity="0.15"/><rect x="36" y="44" width="48" height="32" rx="16" fill="#FF6A00" opacity="0.7"/><rect x="46" y="36" width="28" height="14" rx="7" fill="#cc5500"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pillars">
+    <div class="container">
+      <div class="reveal" style="text-align:center;max-width:600px;margin:0 auto;">
+        <div class="section-tag" data-t="pillars_tag">What Drives Us</div>
+        <div class="orange-divider" style="margin:0 auto 1.5rem;"></div>
+        <h2 class="section-title" data-t="pillars_title">OUR THREE PILLARS</h2>
+        <p class="section-sub" style="margin:0 auto;" data-t="pillars_sub">Everything we do comes back to these three core values that shape every wing, every plate, every experience.</p>
+      </div>
+      <div class="pillars-grid">
+        <div class="pillar-card reveal reveal-delay-1">
+          <div class="pillar-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          <div class="pillar-title" data-t="p1_title">PASSION FOR FOOD</div>
+          <p class="pillar-desc" data-t="p1_desc">Our kitchen team puts heart into every single plate. We obsess over flavors, textures, and the perfect sauce ratio so you don't have to.</p>
+        </div>
+        <div class="pillar-card reveal reveal-delay-2">
+          <div class="pillar-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="pillar-title" data-t="p2_title">QUALITY INGREDIENTS</div>
+          <p class="pillar-desc" data-t="p2_desc">We source fresh, premium chicken and make our sauces in-house daily. No shortcuts, no compromises. Just real, honest ingredients.</p>
+        </div>
+        <div class="pillar-card reveal reveal-delay-3">
+          <div class="pillar-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="pillar-title" data-t="p3_title">FRIENDLY ATMOSPHERE</div>
+          <p class="pillar-desc" data-t="p3_desc">The food is the reason you come. The vibes are the reason you stay. Our space is designed to feel like the coolest living room you've ever been in.</p>
+        </div>
+        <div class="pillar-card reveal reveal-delay-4">
+          <div class="pillar-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div class="pillar-title" data-t="p4_title">BOLD FLAVORS</div>
+          <p class="pillar-desc" data-t="p4_desc">From mild and sweet to face-meltingly hot, we celebrate flavor in all its forms. There's something here for every palate and every mood.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--dark);padding:4rem 2rem;text-align:center;">
+    <div class="container reveal">
+      <h2 class="section-title" data-t="about_cta_title">COME SEE FOR<br><span style="color:var(--orange)">YOURSELF.</span></h2>
+      <p style="color:var(--muted);margin:1rem 0 2rem;" data-t="about_cta_sub">Words only go so far. The best way to understand B&amp;C is to be in the room.</p>
+      <button class="btn-primary" onclick="showPage('location')" data-t="about_cta_btn">Find Our Location</button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">BONELESS &amp; CHILL</div>
+    <p class="footer-tagline" data-t="footer_tag">The perfect place to chill and eat good. Always.</p>
+    <div class="social-links">
+      <a class="social-btn-img-wrap" href="https://www.instagram.com/boneless_chill/" target="_blank" title="Instagram">
+        <img src="instagram.png" alt="Instagram" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;'>IG</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://wa.me/528446752860" target="_blank" title="WhatsApp">
+        <img src="whatsapp.png" alt="WhatsApp" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;color:#25d366;'>WA</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://www.ubereats.com/mx/store/boneless-n-chill-saltillo/ME5gMDrDWHWCVBhBib1fmw?ps=1" target="_blank" title="Uber Eats">
+        <img src="ubereats.png" alt="Uber Eats" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.65rem;font-weight:800;color:#06c36e;'>UE</span>'">
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2025 Boneless &amp; Chill. All rights reserved.</p>
+  </footer>
+</div>
+
+<!-- ========== LOCATION PAGE ========== -->
+<div id="page-location" class="page">
+  <div class="location-hero">
+    <div class="container">
+      <div class="section-tag" data-t="loc_tag">Find Us</div>
+      <div class="orange-divider"></div>
+      <h1 class="section-title" style="font-size:clamp(3rem,8vw,5.5rem);" data-t="loc_title">WHERE THE<br><span style="color:var(--orange)">FLAVOR LIVES</span></h1>
+      <p style="color:var(--muted);font-size:1.05rem;max-width:480px;line-height:1.7;margin-top:1rem;" data-t="loc_sub">We're not hard to find — and once you know where we are, you'll keep coming back.</p>
+    </div>
+  </div>
+
+  <section class="map-section">
+    <div class="container">
+      <div class="map-layout">
+        <div class="location-cards">
+          <div class="reveal">
+            <div class="section-tag" data-t="loc_addr_tag">Our Address</div>
+            <div class="orange-divider"></div>
+            <h2 class="section-title" style="font-size:2.5rem;margin-bottom:2rem;" data-t="loc_addr_title">GET HERE<br>YOUR WAY</h2>
+          </div>
+          <div class="loc-card reveal reveal-delay-1">
+            <div class="loc-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div class="loc-info">
+              <h4 data-t="loc_addr_label">Address</h4>
+              <p>P.&ordm; de Las Lomas 1259b-Local 8<br>Residencial San Patricio<br>25204 Saltillo, Coahuila</p>
+            </div>
+          </div>
+          <div class="loc-card reveal reveal-delay-2">
+            <div class="loc-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.4 19.79 19.79 0 0 1 1.6 4.86 2 2 0 0 1 3.58 2.68h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.4a16 16 0 0 0 6.29 6.29l1.8-1.8a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+            <div class="loc-info">
+              <h4 data-t="loc_phone_label">Phone</h4>
+              <p>844 675 2860</p>
+            </div>
+          </div>
+          <div class="loc-card reveal reveal-delay-3">
+            <div class="loc-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></div>
+            <div class="loc-info">
+              <h4>Instagram</h4>
+              <p><a href="https://www.instagram.com/boneless_chill/" target="_blank" style="color:var(--orange);text-decoration:none;">@boneless_chill</a></p>
+            </div>
+          </div>
+          <div class="reveal reveal-delay-4" style="margin-top:0.5rem;">
+            <button class="btn-primary" onclick="window.open('https://maps.google.com/maps?q=Paseo+de+Las+Lomas+1259b,+Residencial+San+Patricio,+Saltillo,+Coahuila','_blank')" data-t="loc_directions">Get Directions</button>
+          </div>
+        </div>
+        <div class="reveal">
+          <div class="map-container">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3601.5!2d-100.9825!3d25.4455!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868812345678%3A0x0!2sPaseo+de+Las+Lomas+1259b%2C+Residencial+San+Patricio%2C+Saltillo%2C+Coah.!5e0!3m2!1sen!2smx!4v1" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hours-section">
+    <div class="container">
+      <div class="reveal" style="text-align:center;margin-bottom:0;">
+        <div class="section-tag" data-t="hours_tag">We're Open</div>
+        <div class="orange-divider" style="margin:0 auto 1rem;"></div>
+        <h2 class="section-title" data-t="hours_title">BUSINESS HOURS</h2>
+        <p style="color:var(--muted);margin-bottom:0;font-size:0.95rem;" data-t="hours_sub">Walk in or call ahead — we're ready for you.</p>
+      </div>
+      <div class="hours-grid">
+        <div class="hours-card reveal reveal-delay-1">
+          <div class="hours-day" data-t="hours_closed_days">Monday – Wednesday</div>
+          <div class="hours-time hours-closed" data-t="hours_closed">Closed</div>
+        </div>
+        <div class="hours-card reveal reveal-delay-2" style="border-color:rgba(255,106,0,0.3);">
+          <div class="hours-day" data-t="hours_thu">Thursday</div>
+          <div class="hours-time" style="color:var(--orange);">3:00 PM – 10:00 PM</div>
+        </div>
+        <div class="hours-card reveal reveal-delay-3" style="border-color:rgba(255,106,0,0.3);">
+          <div class="hours-day" data-t="hours_fri">Friday</div>
+          <div class="hours-time" style="color:var(--orange);">3:00 PM – 10:00 PM</div>
+        </div>
+        <div class="hours-card reveal reveal-delay-4" style="border-color:rgba(255,106,0,0.3);">
+          <div class="hours-day" data-t="hours_sat">Saturday</div>
+          <div class="hours-time" style="color:var(--orange);">3:00 PM – 10:00 PM</div>
+        </div>
+        <div class="hours-card reveal reveal-delay-4" style="border-color:rgba(255,106,0,0.3);">
+          <div class="hours-day" data-t="hours_sun">Sunday</div>
+          <div class="hours-time" style="color:var(--orange);">3:00 PM – 10:00 PM</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">BONELESS &amp; CHILL</div>
+    <p class="footer-tagline" data-t="footer_tag">The perfect place to chill and eat good. Always.</p>
+    <div class="social-links">
+      <a class="social-btn-img-wrap" href="https://www.instagram.com/boneless_chill/" target="_blank" title="Instagram">
+        <img src="instagram.png" alt="Instagram" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;'>IG</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://wa.me/528446752860" target="_blank" title="WhatsApp">
+        <img src="whatsapp.png" alt="WhatsApp" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;color:#25d366;'>WA</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://www.ubereats.com/mx/store/boneless-n-chill-saltillo/ME5gMDrDWHWCVBhBib1fmw?ps=1" target="_blank" title="Uber Eats">
+        <img src="ubereats.png" alt="Uber Eats" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.65rem;font-weight:800;color:#06c36e;'>UE</span>'">
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2025 Boneless &amp; Chill. All rights reserved.</p>
+  </footer>
+</div>
+
+<!-- ========== CONTACT PAGE ========== -->
+<div id="page-contact" class="page">
+  <div class="contact-hero">
+    <div class="container">
+      <div class="section-tag" data-t="contact_tag">Reach Out</div>
+      <div class="orange-divider"></div>
+      <h1 class="section-title" style="font-size:clamp(3rem,8vw,5.5rem);" data-t="contact_title">LET'S<br><span style="color:var(--orange)">CONNECT.</span></h1>
+      <p style="color:var(--muted);font-size:1.05rem;max-width:480px;line-height:1.7;margin-top:1rem;" data-t="contact_sub">Questions, feedback, events, or just want to say hi — we're all ears.</p>
+    </div>
+  </div>
+
+  <section style="background:var(--black);padding:5rem 2rem;">
+    <div class="container">
+      <div class="contact-layout">
+        <div>
+          <div class="section-tag reveal" data-t="contact_info_tag">Stay Connected</div>
+          <div class="orange-divider reveal"></div>
+          <h2 class="section-title reveal" style="font-size:2.5rem;margin-bottom:2rem;" data-t="contact_info_title">FIND US<br>EVERYWHERE</h2>
+          <div class="contact-cards">
+            <div class="contact-card reveal reveal-delay-1">
+              <div class="contact-card-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.4 19.79 19.79 0 0 1 1.6 4.86 2 2 0 0 1 3.58 2.68h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.4a16 16 0 0 0 6.29 6.29l1.8-1.8a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+              <div class="contact-card-info">
+                <h4 data-t="loc_phone_label">Phone</h4>
+                <p>844 675 2860</p>
+              </div>
+            </div>
+            <div class="contact-card reveal reveal-delay-2">
+              <div class="contact-card-icon" style="padding:4px; background:rgba(225,48,108,0.12);">
+                <img src="instagram.png" alt="Instagram" style="width:28px;height:28px;object-fit:contain;border-radius:6px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <svg style="display:none" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e1306c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              </div>
+              <div class="contact-card-info">
+                <h4>Instagram</h4>
+                <p><a href="https://www.instagram.com/boneless_chill/" target="_blank" style="color:var(--orange);text-decoration:none;">@boneless_chill</a></p>
+              </div>
+            </div>
+            <div class="contact-card reveal reveal-delay-3" style="cursor:pointer;" onclick="window.open('https://wa.me/528446752860','_blank')">
+              <div class="contact-card-icon" style="padding:4px; background:rgba(37,211,102,0.1);">
+                <img src="whatsapp.png" alt="WhatsApp" style="width:28px;height:28px;object-fit:contain;border-radius:6px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <svg style="display:none" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              </div>
+              <div class="contact-card-info">
+                <h4>WhatsApp</h4>
+                <p data-t="wa_card_sub">Chat with us directly</p>
+              </div>
+            </div>
+            <div class="contact-card reveal reveal-delay-4" style="cursor:pointer;" onclick="window.open('https://www.ubereats.com/mx/store/boneless-n-chill-saltillo/ME5gMDrDWHWCVBhBib1fmw?ps=1','_blank')">
+              <div class="contact-card-icon" style="padding:4px; background:rgba(6,195,110,0.1);">
+                <img src="ubereats.png" alt="Uber Eats" style="width:28px;height:28px;object-fit:contain;border-radius:6px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <svg style="display:none" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#06c36e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              </div>
+              <div class="contact-card-info">
+                <h4>Uber Eats</h4>
+                <p data-t="ue_card_sub">Order delivery now</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ORDER ONLINE BLOCK -->
+          <div class="order-section reveal" style="margin-top:2rem;">
+            <div class="order-section-label" data-t="order_label">Order Online</div>
+            <div class="order-btns">
+              <a class="order-btn order-btn-wa" href="https://wa.me/528446752860" target="_blank">
+                <div class="order-btn-icon">
+                  <img src="whatsapp.png" alt="WhatsApp" onerror="this.style.display='none';this.parentElement.style.background='#1b2e22';this.parentElement.innerHTML='<span style=\'color:#25d366;font-size:1rem;font-weight:700;\'>W</span>'">
+                </div>
+                <div class="order-btn-text">
+                  <div class="order-btn-title">WhatsApp</div>
+                  <div class="order-btn-sub" data-t="wa_order_sub">Send us your order via chat</div>
+                </div>
+                <span class="order-btn-arrow">&#8594;</span>
+              </a>
+              <a class="order-btn order-btn-ue" href="https://www.ubereats.com/mx/store/boneless-n-chill-saltillo/ME5gMDrDWHWCVBhBib1fmw?ps=1" target="_blank">
+                <div class="order-btn-icon">
+                  <img src="ubereats.png" alt="Uber Eats" onerror="this.style.display='none';this.parentElement.style.background='#0d2218';this.parentElement.innerHTML='<span style=\'color:#06c36e;font-size:0.7rem;font-weight:800;letter-spacing:-0.5px;\'>UE</span>'">
+                </div>
+                <div class="order-btn-text">
+                  <div class="order-btn-title">Uber Eats</div>
+                  <div class="order-btn-sub" data-t="ue_order_sub">Fast delivery to your door</div>
+                </div>
+                <span class="order-btn-arrow">&#8594;</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-form-wrap reveal">
+          <h3 style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--white);letter-spacing:1px;margin-bottom:0.5rem;" data-t="form_title">SEND US A MESSAGE</h3>
+          <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;" data-t="form_choose_method">Choose how you want to send it:</p>
+
+          <div class="send-methods">
+            <button class="send-method-btn active" id="methodSMS" onclick="selectMethod('sms')">
+              <div class="send-method-icon" style="background:#1a3050;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a9eff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <span data-t="method_sms">SMS / iMessage</span>
+            </button>
+            <button class="send-method-btn" id="methodWA" onclick="selectMethod('wa')">
+              <div class="send-method-icon" style="background:#1b2e22; overflow:hidden;">
+                <img src="whatsapp.png" alt="WA" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.innerHTML='<svg width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'#25d366\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\'/></svg>'">
+              </div>
+              <span>WhatsApp</span>
+            </button>
+          </div>
+
+          <form id="contactForm" onsubmit="handleSubmit(event)">
+            <div class="form-group">
+              <label data-t="form_name_label">Your Name</label>
+              <input type="text" id="fieldName" placeholder="e.g. Carlos Herrera" required data-t-ph="form_name_ph">
+            </div>
+            <div class="form-group">
+              <label data-t="form_phone_label">Your Phone Number</label>
+              <input type="tel" id="fieldPhone" placeholder="e.g. 844 123 4567" required>
+            </div>
+            <div class="form-group">
+              <label data-t="form_msg_label">Message</label>
+              <textarea id="fieldMessage" placeholder="Tell us anything — orders, events, or just a hello." required data-t-ph="form_msg_ph"></textarea>
+            </div>
+            <button type="submit" class="submit-btn" id="submitBtn" data-t="form_submit">Send Message</button>
+          </form>
+          <div class="success-msg" id="successMsg">
+            <div style="font-size:2rem;margin-bottom:0.5rem;">&#10003;</div>
+            <p style="color:var(--orange);font-weight:600;" data-t="form_success">Message sent. We will get back to you shortly.</p>
+            <p style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem;font-weight:400;" data-t="form_success_sub">Usually within a few hours.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">BONELESS &amp; CHILL</div>
+    <p class="footer-tagline" data-t="footer_tag">The perfect place to chill and eat good. Always.</p>
+    <div class="social-links">
+      <a class="social-btn-img-wrap" href="https://www.instagram.com/boneless_chill/" target="_blank" title="Instagram">
+        <img src="instagram.png" alt="Instagram" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;'>IG</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://wa.me/528446752860" target="_blank" title="WhatsApp">
+        <img src="whatsapp.png" alt="WhatsApp" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.7rem;font-weight:700;color:#25d366;'>WA</span>'">
+      </a>
+      <a class="social-btn-img-wrap" href="https://www.ubereats.com/mx/store/boneless-n-chill-saltillo/ME5gMDrDWHWCVBhBib1fmw?ps=1" target="_blank" title="Uber Eats">
+        <img src="ubereats.png" alt="Uber Eats" onerror="this.style.display='none';this.parentElement.innerHTML='<span style='font-size:0.65rem;font-weight:800;color:#06c36e;'>UE</span>'">
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2025 Boneless &amp; Chill. All rights reserved.</p>
+  </footer>
+</div>
+
+<script>
+// ===== TRANSLATIONS =====
+const T = {
+  en: {
+    nav_home:'Home', nav_menu:'Menu', nav_about:'Who Are We?', nav_location:'Where Are We?', nav_contact:'Contact Us',
+    hero_badge:'Now Serving — Thursday to Sunday',
+    hero_sub:'The perfect place to chill and enjoy the best boneless wings. Bold flavors, cozy vibes, unforgettable moments.',
+    hero_btn_menu:'View Menu', hero_btn_contact:'Contact Us', scroll:'Scroll',
+    feat_tag:'Our Signature', feat_title:'CROWD FAVORITES',
+    feat_sub:"Each plate is crafted with bold sauces, premium chicken, and that unmistakable B&C soul.",
+    pack_tag_personal:"People's Favorite", pack_name_personal:'Personal Pack',
+    pack_desc_personal:'The perfect solo experience. Choose your sauce, get your wings, and settle in for a good time.',
+    pack_tag_classic:'Best Seller', pack_name_classic:'Classic Pack',
+    pack_desc_classic:'Made for sharing. More wings, more fun. Bring a friend and make it a moment.',
+    pack_tag_supreme:'The Full Experience', pack_name_supreme:'Supreme Pack',
+    pack_desc_supreme:"Go all out. The ultimate B&C experience for those who refuse to settle for less.",
+    rev_tag:'What People Say', rev_title:'THE LOVE IS REAL',
+    rev_sub:"Don't just take our word for it — hear it from the people who've tasted the difference.",
+    rev1:'"Honestly the best boneless wings I\'ve ever had. The Classic Pack is incredible. This place has become our go-to every week."',
+    rev1_loc:'Local Regular',
+    rev2:'"The vibe is everything. Cozy, modern, great music. The Personal Pack is perfect for a solo night out. Highly recommend."',
+    rev2_loc:'First-Timer, Now Addicted',
+    rev3:'"The Supreme Pack is the move. Great value, even better flavor. The staff is friendly and the atmosphere is on point."',
+    rev3_loc:'Wing Enthusiast',
+    cta_title:'READY TO CHILL?', cta_sub:'Come experience the flavor. Find us, hit us up, or just show up.',
+    cta_find:'Find Us', cta_hit:'Hit Us Up',
+    footer_tag:'The perfect place to chill and eat good. Always.',
+    menu_tag:'Full Menu', menu_title:'OUR MENU',
+    menu_sub:'Everything we serve, all in one place. Scroll to see the full selection.',
+    menu_placeholder:'Place menu.png in the same folder as this file',
+    about_tag:'Our Story', about_hero_title:"WE'RE MORE<br>THAN WINGS.",
+    about_hero_sub:"We're a feeling. A vibe. A place where good food meets great people, and every meal becomes a memory.",
+    about_story_tag:'The Beginning', about_story_title:'BORN FROM<br>A PASSION<br>FOR FLAVOR',
+    about_p1:"Boneless & Chill started as a simple dream: create the perfect boneless wing experience in an atmosphere that felt like home — but cooler. Our founders spent years perfecting recipes, sourcing quality ingredients, and designing a space where flavor meets comfort.",
+    about_p2:"Today, we're proud to be more than a restaurant. We're a community gathering spot, a celebration venue, a weekly tradition, and a place where every guest feels like family.",
+    pillars_tag:'What Drives Us', pillars_title:'OUR THREE PILLARS',
+    pillars_sub:'Everything we do comes back to these three core values that shape every wing, every plate, every experience.',
+    p1_title:'PASSION FOR FOOD', p1_desc:"Our kitchen team puts heart into every single plate. We obsess over flavors, textures, and the perfect sauce ratio so you don't have to.",
+    p2_title:'QUALITY INGREDIENTS', p2_desc:'We source fresh, premium chicken and make our sauces in-house daily. No shortcuts, no compromises. Just real, honest ingredients.',
+    p3_title:'FRIENDLY ATMOSPHERE', p3_desc:"The food is the reason you come. The vibes are the reason you stay. Our space is designed to feel like the coolest living room you've ever been in.",
+    p4_title:'BOLD FLAVORS', p4_desc:"From mild and sweet to face-meltingly hot, we celebrate flavor in all its forms. There's something here for every palate and every mood.",
+    about_cta_title:'COME SEE FOR<br>YOURSELF.', about_cta_sub:"Words only go so far. The best way to understand B&C is to be in the room.",
+    about_cta_btn:'Find Our Location',
+    loc_tag:'Find Us', loc_title:'WHERE THE<br>FLAVOR LIVES',
+    loc_sub:"We're not hard to find — and once you know where we are, you'll keep coming back.",
+    loc_addr_tag:'Our Address', loc_addr_title:'GET HERE<br>YOUR WAY',
+    loc_addr_label:'Address', loc_phone_label:'Phone', loc_directions:'Get Directions',
+    hours_tag:"We're Open", hours_title:'BUSINESS HOURS',
+    hours_sub:"Walk in or call ahead — we're ready for you.",
+    hours_closed_days:'Monday – Wednesday', hours_closed:'Closed',
+    hours_thu:'Thursday', hours_fri:'Friday', hours_sat:'Saturday', hours_sun:'Sunday',
+    contact_tag:'Reach Out', contact_title:"LET'S<br>CONNECT.",
+    contact_sub:"Questions, feedback, events, or just want to say hi — we're all ears.",
+    contact_info_tag:'Stay Connected', contact_info_title:'FIND US<br>EVERYWHERE',
+    form_title:'SEND US A MESSAGE', form_name_label:'Your Name',
+    form_name_ph:'e.g. Carlos Herrera', form_phone_label:'Your Phone Number',
+    form_msg_label:'Message', form_msg_ph:'Tell us anything — orders, events, or just a hello.',
+    form_submit:'Send Message', form_success:'Message sent. We will get back to you shortly.',
+    form_success_sub:'Usually within a few hours.',
+    form_choose_method:'Choose how you want to send it:',
+    method_sms:'SMS / iMessage',
+    order_label:'Order Online',
+    wa_card_sub:'Chat with us directly', ue_card_sub:'Order delivery now',
+    wa_order_sub:'Send us your order via chat', ue_order_sub:'Fast delivery to your door'
+  },
+  es: {
+    nav_home:'Inicio', nav_menu:'Menú', nav_about:'Quiénes Somos?', nav_location:'Dónde Estamos?', nav_contact:'Contáctanos',
+    hero_badge:'Abierto — Jueves a Domingo',
+    hero_sub:'El lugar perfecto para relajarte y disfrutar las mejores alitas deshuesadas. Sabores intensos, ambiente acogedor, momentos inolvidables.',
+    hero_btn_menu:'Ver Menú', hero_btn_contact:'Contáctanos', scroll:'Desliza',
+    feat_tag:'Nuestra Firma', feat_title:'LOS FAVORITOS',
+    feat_sub:'Cada plato está elaborado con salsas intensas, pollo de primera calidad y ese inconfundible alma B&C.',
+    pack_tag_personal:'Favorito del Público', pack_name_personal:'Pack Personal',
+    pack_desc_personal:'La experiencia perfecta para ti solo. Elige tu salsa, pide tus alitas y disfruta el momento.',
+    pack_tag_classic:'El Más Vendido', pack_name_classic:'Pack Clásico',
+    pack_desc_classic:'Hecho para compartir. Más alitas, más diversión. Trae a un amigo y conviértelo en un momento especial.',
+    pack_tag_supreme:'La Experiencia Completa', pack_name_supreme:'Pack Supremo',
+    pack_desc_supreme:'Sin límites. La experiencia B&C definitiva para quienes se niegan a conformarse con menos.',
+    rev_tag:'Lo Que Dicen', rev_title:'EL AMOR ES REAL',
+    rev_sub:'No solo tomes nuestra palabra — escucha a quienes ya probaron la diferencia.',
+    rev1:'"Honestamente las mejores alitas deshuesadas que he probado. El Pack Clásico es increíble. Este lugar se ha vuelto nuestro favorito de cada semana."',
+    rev1_loc:'Cliente Habitual',
+    rev2:'"El ambiente lo es todo. Acogedor, moderno, buena música. El Pack Personal es perfecto para una noche solitaria. Muy recomendado."',
+    rev2_loc:'Primera Vez, Ya Adicta',
+    rev3:'"El Pack Supremo es la opción ideal. Gran valor, sabor aún mejor. El personal es amable y el ambiente es excelente."',
+    rev3_loc:'Entusiasta de las Alitas',
+    cta_title:'LISTO PARA RELAJARTE?', cta_sub:'Ven a vivir la experiencia. Encuéntranos, escríbenos o simplemente aparece.',
+    cta_find:'Encuéntranos', cta_hit:'Escríbenos',
+    footer_tag:'El lugar perfecto para relajarte y comer bien. Siempre.',
+    menu_tag:'Menú Completo', menu_title:'NUESTRO MENÚ',
+    menu_sub:'Todo lo que servimos en un solo lugar. Desliza para ver la selección completa.',
+    menu_placeholder:'Coloca menu.png en la misma carpeta que este archivo',
+    about_tag:'Nuestra Historia', about_hero_title:'SOMOS MÁS<br>QUE ALITAS.',
+    about_hero_sub:'Somos un sentimiento. Una vibra. Un lugar donde la buena comida se encuentra con gente increíble, y cada comida se convierte en un recuerdo.',
+    about_story_tag:'Los Inicios', about_story_title:'NACIDOS DE<br>UNA PASIÓN<br>POR EL SABOR',
+    about_p1:'Boneless & Chill nació de un sueño sencillo: crear la experiencia perfecta de alitas deshuesadas en un ambiente que se sintiera como en casa — pero mucho más cool. Nuestros fundadores pasaron años perfeccionando recetas, buscando ingredientes de calidad y diseñando un espacio donde el sabor se encuentra con la comodidad.',
+    about_p2:'Hoy, nos enorgullece ser más que un restaurante. Somos un punto de encuentro comunitario, un lugar para celebrar, una tradición semanal y un espacio donde cada cliente se siente como familia.',
+    pillars_tag:'Lo Que Nos Mueve', pillars_title:'NUESTROS TRES PILARES',
+    pillars_sub:'Todo lo que hacemos vuelve a estos tres valores fundamentales que dan forma a cada alita, cada plato y cada experiencia.',
+    p1_title:'PASIÓN POR LA COMIDA', p1_desc:'Nuestro equipo de cocina pone el corazón en cada plato. Nos obsesionamos con los sabores, las texturas y la proporción perfecta de salsa para que tú no tengas que hacerlo.',
+    p2_title:'INGREDIENTES DE CALIDAD', p2_desc:'Buscamos pollo fresco y de primera calidad, y preparamos nuestras salsas en casa cada día. Sin atajos, sin compromisos. Solo ingredientes reales y honestos.',
+    p3_title:'AMBIENTE AMIGABLE', p3_desc:'La comida es la razón por la que vienes. El ambiente es la razón por la que te quedas. Nuestro espacio está diseñado para sentirse como la sala de estar más cool en la que has estado.',
+    p4_title:'SABORES INTENSOS', p4_desc:'Desde suave y dulce hasta increíblemente picante, celebramos el sabor en todas sus formas. Hay algo aquí para cada paladar y cada estado de ánimo.',
+    about_cta_title:'VEN A VER<br>POR TI MISMO.', about_cta_sub:'Las palabras solo llegan hasta cierto punto. La mejor manera de entender B&C es estar en el lugar.',
+    about_cta_btn:'Encuentra Nuestra Ubicación',
+    loc_tag:'Encuéntranos', loc_title:'DONDE VIVE<br>EL SABOR',
+    loc_sub:'No somos difíciles de encontrar — y una vez que sabes dónde estamos, seguirás volviendo.',
+    loc_addr_tag:'Nuestra Dirección', loc_addr_title:'LLEGA<br>COMO QUIERAS',
+    loc_addr_label:'Dirección', loc_phone_label:'Teléfono', loc_directions:'Cómo Llegar',
+    hours_tag:'Estamos Abiertos', hours_title:'HORARIO DE ATENCIÓN',
+    hours_sub:'Pasa o llama — estamos listos para ti.',
+    hours_closed_days:'Lunes – Miércoles', hours_closed:'Cerrado',
+    hours_thu:'Jueves', hours_fri:'Viernes', hours_sat:'Sábado', hours_sun:'Domingo',
+    contact_tag:'Comunícate', contact_title:'CONECTEMOS.',
+    contact_sub:'Preguntas, comentarios, eventos o simplemente quieres saludar — todos son bienvenidos.',
+    contact_info_tag:'Síguenos', contact_info_title:'ENCUÉNTRANOS<br>EN TODOS LADOS',
+    form_title:'ENVÍANOS UN MENSAJE', form_name_label:'Tu Nombre',
+    form_name_ph:'ej. Carlos Herrera', form_phone_label:'Tu Número de Teléfono',
+    form_msg_label:'Mensaje', form_msg_ph:'Cuéntanos todo — pedidos, eventos o simplemente un hola.',
+    form_submit:'Enviar Mensaje', form_success:'Mensaje enviado. Te responderemos pronto.',
+    form_success_sub:'Generalmente en unas pocas horas.',
+    form_choose_method:'Elige cómo quieres enviarlo:',
+    method_sms:'SMS / iMessage',
+    order_label:'Pedir en Línea',
+    wa_card_sub:'Chatea con nosotros directo', ue_card_sub:'Pide a domicilio ahora',
+    wa_order_sub:'Envíanos tu pedido por chat', ue_order_sub:'Entrega rápida a tu puerta'
+  }
+};
+
+let currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('lang-picker').classList.add('hidden');
+  document.getElementById('langBtn').textContent = lang === 'en' ? 'ES' : 'EN';
+  applyTranslations();
+  // Start loader
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('hidden');
+  }, 2000);
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'es' : 'en';
+  document.getElementById('langBtn').textContent = currentLang === 'en' ? 'ES' : 'EN';
+  applyTranslations();
+}
+
+function applyTranslations() {
+  const t = T[currentLang];
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+  document.querySelectorAll('[data-t-ph]').forEach(el => {
+    const key = el.getAttribute('data-t-ph');
+    if (t[key] !== undefined) el.placeholder = t[key];
+  });
+  // textarea placeholder
+  const msg = document.getElementById('fieldMessage');
+  if (msg && t['form_msg_ph']) msg.placeholder = t['form_msg_ph'];
+}
+
+// ===== NAVBAR SCROLL =====
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// ===== PAGE NAV =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(initReveal, 100);
+}
+
+// ===== HAMBURGER =====
+function toggleMenu() { document.getElementById('navLinks').classList.toggle('open'); }
+function closeMenu() { document.getElementById('navLinks').classList.remove('open'); }
+
+// ===== SCROLL REVEAL =====
+function initReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, {threshold:0.12});
+  document.querySelectorAll('.page.active .reveal').forEach(el => {
+    el.classList.remove('visible');
+    observer.observe(el);
+  });
+}
+setTimeout(initReveal, 300);
+
+// ===== PARTICLES =====
+(function(){
+  const canvas = document.getElementById('particles-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  function resize(){ W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
+  class Particle {
+    constructor(){ this.reset(); }
+    reset(){
+      this.x = Math.random()*W; this.y = Math.random()*H;
+      this.size = Math.random()*2+0.5;
+      this.speedX = (Math.random()-0.5)*0.5;
+      this.speedY = -(Math.random()*0.8+0.2);
+      this.opacity = Math.random()*0.5+0.1;
+      this.life = 0; this.maxLife = Math.random()*200+100;
+      this.hue = Math.random()>0.7?30:22;
+    }
+    update(){
+      this.x += this.speedX; this.y += this.speedY; this.life++;
+      this.currentOpacity = this.opacity*Math.sin((this.life/this.maxLife)*Math.PI);
+      if(this.life>=this.maxLife||this.y<0) this.reset();
+    }
+    draw(){
+      ctx.save(); ctx.globalAlpha = this.currentOpacity;
+      ctx.fillStyle = `hsl(${this.hue},100%,60%)`;
+      ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); ctx.restore();
+    }
+  }
+  resize(); window.addEventListener('resize',resize);
+  for(let i=0;i<80;i++){ const p=new Particle(); p.life=Math.floor(Math.random()*p.maxLife); particles.push(p); }
+  function animate(){ ctx.clearRect(0,0,W,H); particles.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(animate); }
+  animate();
+})();
+
+// ===== SEND METHOD =====
+let sendMethod = 'sms';
+function selectMethod(m) {
+  sendMethod = m;
+  document.getElementById('methodSMS').classList.toggle('active', m === 'sms');
+  document.getElementById('methodWA').classList.toggle('active', m === 'wa');
+}
+
+// ===== CONTACT FORM =====
+function handleSubmit(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const name = document.getElementById('fieldName').value.trim();
+  const phone = document.getElementById('fieldPhone').value.trim();
+  const message = document.getElementById('fieldMessage').value.trim();
+  const body = 'Mensaje desde el sitio web de Boneless & Chill\nNombre: ' + name + '\nTelefono: ' + phone + '\nMensaje: ' + message;
+  btn.textContent = currentLang === 'es' ? 'Abriendo...' : 'Opening...';
+  btn.disabled = true;
+  if (sendMethod === 'wa') {
+    window.open('https://wa.me/528446752860?text=' + encodeURIComponent(body), '_blank');
+  } else {
+    window.location.href = 'sms:8446752860?body=' + encodeURIComponent(body);
+  }
+  setTimeout(() => {
+    document.getElementById('contactForm').style.display = 'none';
+    document.getElementById('successMsg').classList.add('show');
+  }, 1200);
+}
+</script>
+</body>
+</html>
